@@ -7,6 +7,8 @@ const db = require('./db')
 const models = require('./models')
 const helmet = require('helmet')
 const cors = require('cors')
+const depthLimit = require('graphql-depth-limit')
+const { createComplexityLimitRule } = require('graphql-validation-complexity')
 
 const DB_HOST = process.env.DB_HOST
 const PORT = process.env.PORT || 4000
@@ -39,6 +41,7 @@ const getUser = (token) => {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  validationRules: [depthLimit(5), createComplexityLimitRule(1000)], // 중첩쿼리 뎁스 제한
   context: ({ req }) => {
     // 헤더에서 사용자 토큰 가져오기
     const token = req.headers.authorization
