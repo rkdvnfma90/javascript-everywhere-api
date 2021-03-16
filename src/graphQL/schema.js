@@ -2,6 +2,8 @@ const { gql } = require('apollo-server-express')
 
 // 기본 스키마 구성
 module.exports = gql`
+  scalar DateTime
+
   type Query {
     hello: String
     notes: [Note]
@@ -12,6 +14,8 @@ module.exports = gql`
     id: ID
     content: String
     author: String
+    createdAt: DateTime!
+    updatedAt: DateTime!
   }
 
   type Mutation {
