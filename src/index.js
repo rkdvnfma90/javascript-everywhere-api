@@ -40,7 +40,6 @@ const server = new ApolloServer({
     const token = req.headers.authorization
     // 토큰에서 사용자 정보 얻기
     const user = getUser(token)
-    console.log(user)
     // context에 db models 추가
     return { models, user }
   },

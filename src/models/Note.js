@@ -12,6 +12,16 @@ const noteSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    favoriteCount: {
+      type: Number,
+      default: 0,
+    },
+    favoritedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     // Date 자료형으로 createAt과  updatedAt 필드 할당한다.

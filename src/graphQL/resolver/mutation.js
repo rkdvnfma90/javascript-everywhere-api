@@ -19,6 +19,7 @@ module.exports = {
       author: mongoose.Types.ObjectId(user.id),
     })
   },
+
   deleteNote: async (parent, { id }, { models, user }) => {
     // context에 user가 없으면 인증에러
     if (!user) {
@@ -38,6 +39,7 @@ module.exports = {
       return false
     }
   },
+
   updateNote: async (parent, { content, id }, { models }) => {
     // context에 user가 없으면 인증에러
     if (!user) {
@@ -64,6 +66,7 @@ module.exports = {
       { new: true }
     )
   },
+
   signUp: async (parent, { username, email, password }, { models }) => {
     email = email.trim().toLowerCase()
     // 패스워드 해쉬
@@ -85,6 +88,7 @@ module.exports = {
       throw new Error('계정생성중 에러가 발생하였습니다.')
     }
   },
+
   signIn: async (parent, { username, email, password }, { models }) => {
     if (email) {
       email = email.trim().toLowerCase()
@@ -106,5 +110,55 @@ module.exports = {
     }
 
     return jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+  },
+
+  toggleFavorite: async (parent, { id }, { models, user }) => {
+    // context에 user가 없으면 인증에러
+    if (!user) {
+      throw new AuthenticationError('즐겨찾기 하려면 로그인 하세요.')
+    }
+
+    // 이미 이 노트를 즐겨찾기 했는지 확인
+    let noteCheck = await models.Note.findById(id)
+    const hasUser = noteCheck.favoritedBy.indexOf(user.id)
+    console.log(hasUser)
+
+    // 이미 즐겨찾기 했다면
+    if (hasUser !== -1) {
+      return await models.Note.findByIdAndUpdate(
+        id,
+        {
+          // 해당 요소 제거
+          $pull: {
+            favoritedBy: mongoose.Types.ObjectId(user.id),
+          },
+          // 해당 필드 값 증가
+          $inc: {
+            favoriteCount: -1,
+          },
+        },
+        {
+          // Set new to true to return the updated doc
+          new: true,
+        }
+      )
+    } else {
+      return await models.Note.findByIdAndUpdate(
+        id,
+        {
+          // 해당 요소 삽입
+          $push: {
+            favoritedBy: mongoose.Types.ObjectId(user.id),
+          },
+          // 해당 필드 값 증가
+          $inc: {
+            favoriteCount: 1,
+          },
+        },
+        {
+          new: true,
+        }
+      )
+    }
   },
 }
