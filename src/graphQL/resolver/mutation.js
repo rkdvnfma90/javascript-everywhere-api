@@ -121,7 +121,6 @@ module.exports = {
     // 이미 이 노트를 즐겨찾기 했는지 확인
     let noteCheck = await models.Note.findById(id)
     const hasUser = noteCheck.favoritedBy.indexOf(user.id)
-    console.log(hasUser)
 
     // 이미 즐겨찾기 했다면
     if (hasUser !== -1) {

@@ -3,9 +3,10 @@ require('dotenv').config()
 const { ApolloServer } = require('apollo-server-express')
 const express = require('express')
 const jwt = require('jsonwebtoken')
-
 const db = require('./db')
 const models = require('./models')
+const helmet = require('helmet')
+const cors = require('cors')
 
 const DB_HOST = process.env.DB_HOST
 const PORT = process.env.PORT || 4000
@@ -14,6 +15,9 @@ const typeDefs = require('./graphQL/schema')
 const resolvers = require('./graphQL/resolver')
 
 const app = express()
+
+app.use(helmet())
+app.use(cors())
 
 db.connect(DB_HOST)
 
