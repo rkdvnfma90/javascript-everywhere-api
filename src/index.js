@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const { ApolloServer } = require('apollo-server-express')
 const express = require('express')
+const jwt = require('jsonwebtoken')
 
 const db = require('./db')
 const models = require('./models')
@@ -16,6 +17,17 @@ const app = express()
 
 db.connect(DB_HOST)
 
+const getUser = (token) => {
+  if (token) {
+    try {
+      // 토큰에서 얻은 사용자 정보 반환
+      return jwt.verify(token, process.env.JWT_SECRET)
+    } catch (err) {
+      throw new Error('Session invalid!')
+    }
+  }
+}
+
 // 아폴로 서버 설정
 // 리졸버 모듈은 데이터베이스 모델을 참조하지만 접근할 수 없다.
 // 이 문제를 해결하기 위해서 아폴로 서버가 context를 호출한다는 개념을 사용하여
@@ -23,7 +35,12 @@ db.connect(DB_HOST)
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: () => {
+  context: ({ req }) => {
+    // 헤더에서 사용자 토큰 가져오기
+    const token = req.headers.authorization
+    // 토큰에서 사용자 정보 얻기
+    const user = getUser(token)
+    console.log(user)
     // context에 db models 추가
     return { models }
   },
