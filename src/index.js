@@ -42,7 +42,7 @@ const server = new ApolloServer({
     const user = getUser(token)
     console.log(user)
     // context에 db models 추가
-    return { models }
+    return { models, user }
   },
 })
 

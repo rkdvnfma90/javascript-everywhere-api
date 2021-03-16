@@ -4,18 +4,34 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const { AuthenticationError, ForbiddenError } = require('apollo-server-express')
 const gravatar = require('../../util/gravatar')
-const { model } = require('mongoose')
+const mongoose = require('mongoose')
 
 module.exports = {
-  newNote: async (parent, args, { models }) => {
+  // parent, args, context
+  newNote: async (parent, args, { models, user }) => {
+    // context에 user가 없으면 인증에러
+    if (!user) {
+      throw new AuthenticationError('작성하려면 로그인 하세요.')
+    }
+
     return await models.Note.create({
       content: args.content,
-      author: 'aB',
+      author: mongoose.Types.ObjectId(user.id),
     })
   },
-  deleteNote: async (parent, { id }, { models }) => {
+  deleteNote: async (parent, { id }, { models, user }) => {
+    // context에 user가 없으면 인증에러
+    if (!user) {
+      throw new AuthenticationError('삭제하려면 로그인 하세요.')
+    }
+
+    const note = await models.Note.findById(id)
+    if (note && String(note.author) !== user.id) {
+      throw new ForbiddenError('본인만 삭제할 수 있습니다.')
+    }
+
     try {
-      await models.Note.findOneAndRemove({ _id: id })
+      await note.remove()
       return true
     } catch (e) {
       console.log(e)
@@ -23,6 +39,16 @@ module.exports = {
     }
   },
   updateNote: async (parent, { content, id }, { models }) => {
+    // context에 user가 없으면 인증에러
+    if (!user) {
+      throw new AuthenticationError('수정하려면 로그인 하세요.')
+    }
+
+    const note = await models.Note.findById(id)
+    if (note && String(note.author) !== user.id) {
+      throw new ForbiddenError('본인만 수정할 수 있습니다.')
+    }
+
     // 첫 번째 파라미터 : 데이터베이스에서 업데이트할 데이터를 찾는 조건
     // 두 번째 파라미터 : $set을 통해 업데이트할 내용
     // 세 번째 파라미터 : 업데이트된 노트 내용을 반환하도록 함
