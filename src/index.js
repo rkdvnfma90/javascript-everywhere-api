@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-const { ApolloServer, gql } = require('apollo-server-express')
+const { ApolloServer } = require('apollo-server-express')
 const express = require('express')
 
 const db = require('./db')
@@ -9,56 +9,25 @@ const models = require('./models')
 const DB_HOST = process.env.DB_HOST
 const PORT = process.env.PORT || 4000
 
-// 기본 스키마 구성
-const typeDefs = gql`
-  type Query {
-    hello: String
-    notes: [Note]
-    note(id: ID): Note
-  }
-
-  type Note {
-    id: ID
-    content: String
-    author: String
-  }
-
-  type Mutation {
-    newNote(content: String!): Note
-  }
-`
-
-// 값을 반환하는 리졸버
-const resolvers = {
-  Query: {
-    hello: () => 'hello world! in resolver',
-    notes: async () => await models.Note.find(),
-    note: async (parent, args) => {
-      return await models.Note.findById(args.id)
-    },
-  },
-  Mutation: {
-    newNote: async (parent, args) => {
-      return await models.Note.create({
-        content: args.content,
-        author: 'aB',
-      })
-    },
-  },
-}
+const typeDefs = require('./graphQL/schema')
+const resolvers = require('./graphQL/resolver')
 
 const app = express()
 
 db.connect(DB_HOST)
 
 // 아폴로 서버 설정
-const server = new ApolloServer({ typeDefs, resolvers })
-
-let notes = [
-  { id: '1', content: '안녕하세요', author: 'aB' },
-  { id: '2', content: '이건 뭐죵', author: 'rkdvnfma90' },
-  { id: '3', content: '헤헤', author: '강푸름' },
-]
+// 리졸버 모듈은 데이터베이스 모델을 참조하지만 접근할 수 없다.
+// 이 문제를 해결하기 위해서 아폴로 서버가 context를 호출한다는 개념을 사용하여
+// 서버 코드가 각 요청과 함께 개별 리졸버에 특정 정보를 전달하게 할 수 있다.
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: () => {
+    // context에 db models 추가
+    return { models }
+  },
+})
 
 // 아폴로 그래프ql 미들웨어 적용후 경로를 /api로 설정
 server.applyMiddleware({ app, path: '/api' })
